@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "name": "WEXSPACE Studio OS Production Company",
+  "governing_rule": "configured != authorized != executed != verified",
+  "agents": [
+    {"id":"executive-producer","owns":["scope","deadline","budget","release authority"]},
+    {"id":"director","owns":["narrative","first-30-second strength","pacing","scene priority"]},
+    {"id":"technical-director","owns":["manifest","timing","adapter routing","determinism"]},
+    {"id":"android-capture","owns":["device runtime","visible input","raw capture","state continuity"]},
+    {"id":"cinematography","owns":["framing","camera motion","crop","zoom","transitions"]},
+    {"id":"evidence-producer","owns":["scene evidence binding","commit/artifact linkage","truth class"]},
+    {"id":"editor","owns":["cut assembly","transitions","runtime continuity"]},
+    {"id":"audio","owns":["voiceover","mix","levels","rights-safe audio"]},
+    {"id":"subtitle","owns":["timed captions","readability"]},
+    {"id":"rights","owns":["licenses","third-party notices","copyright checks"]},
+    {"id":"qa","owns":["runtime truth","duration","fps","resolution","audio","coverage"]},
+    {"id":"release","owns":["master promotion","hashes","metadata","distribution package"]}
+  ]
+}
