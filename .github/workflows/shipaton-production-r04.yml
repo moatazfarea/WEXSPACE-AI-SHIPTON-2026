@@ -1,12 +1,6 @@
 name: WEXSPACE Studio OS — Shipaton R04
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "android/**"
-      - "studio-os/**"
-      - ".github/workflows/shipaton-production-r04.yml"
   workflow_dispatch:
 
 permissions:
