@@ -1,0 +1,26 @@
+import { chromium } from 'playwright';
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const browser=await chromium.launch({headless:false,args:['--no-sandbox','--disable-dev-shm-usage','--kiosk','--window-size=1280,720']});
+const page=await browser.newPage({viewport:{width:1280,height:720}});
+await page.goto('http://127.0.0.1:8080/cinema/',{waitUntil:'networkidle'});
+await page.evaluate(()=>document.querySelector('#intro').classList.add('show'));
+await wait(3600);
+await page.evaluate(()=>document.querySelector('#intro').classList.remove('show'));
+await wait(1400);
+async function glide(x,y,steps=80){await page.mouse.move(x,y,{steps});}
+await glide(360,350); await wait(800);
+await glide(515,614); await page.mouse.click(515,614); await wait(12500);
+await glide(120,300); await page.mouse.click(120,300); await wait(1300);
+await glide(535,614); await page.mouse.click(535,614); await wait(14000);
+await glide(125,385); await page.mouse.click(125,385); await wait(1200);
+await glide(500,556); await page.mouse.click(500,556); await wait(16000);
+await glide(120,475); await page.mouse.click(120,475); await wait(1200);
+await glide(505,500); await page.mouse.click(505,500); await wait(12000);
+await glide(120,210); await page.mouse.click(120,210); await wait(1500);
+await glide(520,614); await wait(10000);
+await glide(125,300); await wait(5000);
+await glide(125,385); await wait(5000);
+await glide(125,475); await wait(5000);
+await page.evaluate(()=>document.querySelector('#intro').classList.add('show'));
+await wait(7800);
+await browser.close();
