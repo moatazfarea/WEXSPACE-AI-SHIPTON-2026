@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "production_id": "WEXSPACE-SHIPATON-R07",
+  "repository": "moatazfarea/WEXSPACE-AI-SHIPTON-2026",
+  "source_truth": "REAL_INTERACTIVE_WEXSPACE_RUNTIME",
+  "slide_deck": false,
+  "visible_interaction": true,
+  "projects": ["PUMP-SKID-001","SOLAR-MICRO-001","LINK-RESCUE-001"],
+  "master": "submission/WEXSPACE_SHIPATON_R07_FINAL_60FPS.mp4",
+  "fps": 60
+}
