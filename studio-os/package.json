@@ -1,0 +1,9 @@
+{
+  "name":"wexspace-studio-os",
+  "private":true,
+  "type":"module",
+  "scripts":{
+    "qualify":"node orchestrator.mjs",
+    "qa":"node qa.mjs"
+  }
+}
