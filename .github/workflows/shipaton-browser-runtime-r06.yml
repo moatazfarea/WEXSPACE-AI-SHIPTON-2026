@@ -1,0 +1,115 @@
+name: WEXSPACE Studio OS — Browser Runtime Fallback R06
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/shipaton-browser-runtime-r06.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wexspace-shipaton-browser-r06
+  cancel-in-progress: true
+
+jobs:
+  produce-browser-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Prepare real WEXSPACE browser runtime worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg xvfb fonts-dejavu-core python3
+          cp site/assets/wexspace-logo.png cinema/wexspace-logo.png
+          npm init -y >/dev/null 2>&1
+          npm i playwright@1.55.0 >/dev/null 2>&1
+          npx playwright install chromium >/dev/null 2>&1
+
+      - name: Capture visible runtime at 60fps
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p submission
+          python3 -m http.server 8080 --directory . >/tmp/http.log 2>&1 &
+          Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset >/tmp/xvfb.log 2>&1 &
+          sleep 2
+          export DISPLAY=:99
+          ffmpeg -y -f x11grab -framerate 60 -video_size 1280x720 -i :99             -c:v libx264 -preset ultrafast -crf 16 -pix_fmt yuv420p             /tmp/wexspace-browser-runtime.mp4 >/tmp/capture.log 2>&1 &
+          FFPID=$!
+          node cinema/capture.mjs
+          sleep 1
+          kill -INT $FFPID || true
+          wait $FFPID || true
+          test -s /tmp/wexspace-browser-runtime.mp4
+
+      - name: Acquire narration
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 "https://www.aidocmaker.com/g0/audio?name=7602b102ef6d4538aa57be2bac76c16d" -o /tmp/narration.mp3
+          test -s /tmp/narration.mp3
+
+      - name: Cinematic 60fps master from real runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          DUR=$(ffprobe -v error -show_entries format=duration -of default=nk=1:nw=1 /tmp/wexspace-browser-runtime.mp4)
+          ffmpeg -hide_banner -loglevel warning -y             -i /tmp/wexspace-browser-runtime.mp4             -i /tmp/narration.mp3             -f lavfi -i "sine=frequency=58:sample_rate=48000:duration=$DUR"             -filter_complex "[0:v]scale=1920:1080:flags=lanczos,eq=contrast=1.04:saturation=1.08[v0];[v0]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='WEXSPACE AI / REAL EXECUTION':fontcolor=white@0.92:fontsize=27:x=52:y=42:box=1:boxcolor=0x02050dcc:boxborderw=14,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='PUMP SKID / MECHANICAL':fontcolor=0x88efff:fontsize=30:x=54:y=980:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='between(t,5,29)',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='SOLAR MICRO-STATION / ENERGY':fontcolor=0x88efff:fontsize=30:x=54:y=980:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='between(t,29,58)',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='REMOTE LINK RESCUE / TELECOM + POWER':fontcolor=0x88efff:fontsize=30:x=54:y=980:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='between(t,58,82)',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='REVENUECAT SHIPATON 2026 / NEXT GEN':fontcolor=0x7dffb2:fontsize=29:x=54:y=980:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='gte(t,82)'[v];[1:a]atempo=1.16,apad=pad_dur=120,atrim=0:$DUR,volume=1.05[vo];[2:a]volume=0.018[score];[vo][score]amix=inputs=2:duration=longest:normalize=0[a]"             -map "[v]" -map "[a]" -t "$DUR"             -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -r 60             -c:a aac -b:a 192k -movflags +faststart             submission/WEXSPACE_SHIPATON_R06_BROWSER_RUNTIME_60FPS.mp4
+
+      - name: QA and persist
+        shell: bash
+        run: |
+          set -euo pipefail
+          META=submission/WEXSPACE_SHIPATON_R06_BROWSER_RUNTIME_60FPS.meta.json
+          ffprobe -v error             -show_entries stream=codec_type,codec_name,width,height,avg_frame_rate             -show_entries format=duration,size             -of json submission/WEXSPACE_SHIPATON_R06_BROWSER_RUNTIME_60FPS.mp4 > "$META"
+          python3 - <<'PY'
+          import json
+          p=json.load(open("submission/WEXSPACE_SHIPATON_R06_BROWSER_RUNTIME_60FPS.meta.json"))
+          d=float(p["format"]["duration"])
+          v=next(x for x in p["streams"] if x["codec_type"]=="video")
+          a=next((x for x in p["streams"] if x["codec_type"]=="audio"),None)
+          assert d < 120 and d > 80
+          assert v["width"]==1920 and v["height"]==1080
+          assert v["avg_frame_rate"]=="60/1"
+          assert a is not None
+          print("QA PASS",d)
+          PY
+          sha256sum submission/WEXSPACE_SHIPATON_R06_BROWSER_RUNTIME_60FPS.mp4             > submission/WEXSPACE_SHIPATON_R06_BROWSER_RUNTIME_60FPS.sha256
+          cat > submission/WEXSPACE_SHIPATON_R06_BROWSER_RUNTIME_RECEIPT.json <<'EOF'
+          {
+            "schema":1,
+            "production_id":"WEXSPACE-SHIPATON-R06",
+            "source_truth":"REAL_WEXSPACE_BROWSER_RUNTIME",
+            "slide_deck":false,
+            "visible_interaction":true,
+            "projects":["PUMP-SKID-001","SOLAR-MICRO-001","LINK-RESCUE-001"],
+            "fps":60,
+            "qa":"PASS_IF_WORKFLOW_SUCCESS"
+          }
+          EOF
+          git config user.name "WEXSPACE Studio OS"
+          git config user.email "actions@users.noreply.github.com"
+          git add submission/WEXSPACE_SHIPATON_R06_*
+          git commit -m "studio-os: persist real-runtime Shipaton R06 master [skip ci]"
+          git pull --rebase origin main
+          git push origin main
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WEXSPACE-SHIPATON-R06-BROWSER-RUNTIME
+          path: submission/WEXSPACE_SHIPATON_R06_*
+          retention-days: 30
+          compression-level: 0
