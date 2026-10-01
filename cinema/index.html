@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WEXSPACE AI — Cinematic Runtime</title>
+<style>
+:root{--bg:#030812;--p:#071a2b;--cyan:#22d3ee;--blue:#3b82f6;--violet:#8b5cf6;--text:#ecfeff;--muted:#9cc7d6;--line:rgba(73,209,255,.25)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 70% 20%,#102a47 0,#030812 42%,#01040a 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+body:before{content:"";position:fixed;inset:-40%;background:conic-gradient(from 0deg,transparent,rgba(34,211,238,.08),transparent 35%,rgba(59,130,246,.1),transparent 70%);animation:spin 22s linear infinite;pointer-events:none}
+@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{50%{box-shadow:0 0 48px rgba(34,211,238,.4)}} @keyframes scan{to{transform:translateY(720px)}}
+.shell{position:relative;width:100vw;height:100vh;padding:28px}
+.top{display:flex;align-items:center;justify-content:space-between}.brand{display:flex;align-items:center;gap:15px;font-weight:800;letter-spacing:.16em}.brand img{width:54px;height:54px;object-fit:contain;filter:drop-shadow(0 0 18px #22d3ee99)}.pill{padding:8px 13px;border:1px solid var(--line);border-radius:999px;color:#9eefff;background:#06131fbb;font-size:12px}
+.main{height:calc(100% - 76px);display:grid;grid-template-columns:230px 1fr 280px;gap:16px;margin-top:18px}
+.panel{background:linear-gradient(160deg,rgba(8,27,44,.92),rgba(4,13,24,.9));border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(16px);box-shadow:0 25px 90px #0008}
+.sidebar{padding:16px}.mission{padding:16px;margin-bottom:12px;border:1px solid transparent;border-radius:16px;cursor:pointer;transition:.35s;background:#071521}.mission:hover,.mission.active{border-color:#39d9ff;background:linear-gradient(135deg,#0a2740,#0b1930);transform:translateX(4px);box-shadow:0 0 30px #22d3ee22}.mission small{color:#69def7}.mission b{display:block;margin-top:5px}
+.workspace{position:relative;overflow:hidden;padding:22px}.scene{position:absolute;inset:22px;opacity:0;transform:scale(.985) translateY(8px);transition:.55s cubic-bezier(.2,.8,.2,1);pointer-events:none}.scene.active{opacity:1;transform:none;pointer-events:auto}
+.hero{display:flex;justify-content:space-between;align-items:flex-start}.kicker{font-size:12px;letter-spacing:.18em;color:#67e8f9}.title{font-size:34px;line-height:1.05;margin:8px 0 4px;letter-spacing:-.03em}.sub{color:var(--muted);font-size:13px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:22px 0}.node{padding:13px;border:1px solid var(--line);border-radius:14px;background:#061725;position:relative}.node:after{content:"→";position:absolute;right:-17px;top:50%;color:#43ddff}.node:last-child:after{display:none}.node .tag{font-size:10px;color:#67e8f9}.node b{display:block;margin-top:5px;font-size:12px}
+.cardgrid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.card{border:1px solid var(--line);border-radius:18px;padding:16px;background:#05121e}.metric{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric div{background:#061a2a;border:1px solid #123956;border-radius:14px;padding:13px}.metric small{color:#78cbe0}.metric strong{display:block;font-size:19px;margin-top:5px}.chart{height:170px;position:relative;overflow:hidden;border-radius:14px;background:linear-gradient(#061a2a,#020b14)}.chart svg{width:100%;height:100%}.trace{stroke:#2dd4ff;stroke-width:3;fill:none;stroke-dasharray:700;stroke-dashoffset:700;transition:2.2s ease}.verified .trace{stroke-dashoffset:0}.dot{fill:#a5f3fc;filter:drop-shadow(0 0 8px #22d3ee)}
+.console{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;line-height:1.6;color:#a5f3fc;height:168px;overflow:hidden}.console .ok{color:#7dffb2}.console .warn{color:#ffd166}
+.action{margin-top:14px;border:1px solid #27d3f3;background:linear-gradient(135deg,#0c4a6e,#1d4ed8);color:white;border-radius:14px;padding:11px 15px;font-weight:750;cursor:pointer;box-shadow:0 0 24px #22d3ee22}.action:hover{transform:translateY(-1px)}
+.evidence{padding:16px}.evidence h3{margin:0 0 12px}.receipt{padding:12px;border:1px solid var(--line);border-radius:14px;margin-bottom:10px;background:#06131f}.receipt small{color:#6bdff5}.receipt b{display:block;margin-top:3px;font-size:12px}.status{display:inline-flex;align-items:center;gap:7px;color:#7dffb2;font-size:12px}.status:before{content:"";width:7px;height:7px;border-radius:50%;background:#52ffa8;box-shadow:0 0 12px #52ffa8}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:.5s;background:radial-gradient(circle,#062843cc,#02060bcc 62%)}.overlay.show{opacity:1}.orb{width:210px;height:210px;border-radius:50%;border:1px solid #53d9ff;box-shadow:0 0 80px #22d3ee55,inset 0 0 45px #2563eb55;display:grid;place-items:center;animation:pulse 2s ease-in-out infinite}.orb img{width:120px;height:120px;object-fit:contain}.overlay h1{position:absolute;margin-top:330px;font-size:34px;letter-spacing:.14em}.scan{position:absolute;height:2px;width:100%;background:linear-gradient(90deg,transparent,#55e7ff,transparent);box-shadow:0 0 18px #55e7ff;animation:scan 5s linear infinite;opacity:.3}
+.bigline{font-size:27px;font-weight:800;line-height:1.15}.quote{font-size:15px;color:#dff7ff;margin-top:12px;border-left:3px solid #38bdf8;padding-left:12px}.dramatic{background:radial-gradient(circle at 50% 50%,#2d1b36,#06111c 68%)}.humor{color:#ffd166;font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div class="brand"><img src="wexspace-logo.png"><span>WEXSPACE AI</span></div>
+    <div class="pill">HUMAN-GOVERNED EXECUTION • LIVE EVIDENCE</div>
+  </div>
+  <div class="main">
+    <aside class="panel sidebar">
+      <div class="mission active" data-scene="pump"><small>MISSION 01</small><b>Pump Skid Design</b></div>
+      <div class="mission" data-scene="solar"><small>MISSION 02</small><b>Solar Micro-Station</b></div>
+      <div class="mission" data-scene="rescue"><small>MISSION 03</small><b>Remote Link Rescue</b></div>
+      <div class="mission" data-scene="pro"><small>COMMERCIAL</small><b>WEXSPACE Pro</b></div>
+    </aside>
+    <section class="panel workspace">
+      <div class="scan"></div>
+      <div class="scene active" id="pump">
+        <div class="hero"><div><div class="kicker">MECHANICAL SPECIALIST</div><div class="title">Pump Skid — Duty Point</div><div class="sub">18 m³/h • 24 m static lift • 85 m run • Ø65 mm</div></div><div class="status">HUMAN AUTHORITY ACTIVE</div></div>
+        <div class="flow"><div class="node"><span class="tag">REQUEST</span><b>Define duty</b></div><div class="node"><span class="tag">SPECIALIST</span><b>Hydraulics</b></div><div class="node"><span class="tag">TOOL</span><b>Deterministic solver</b></div><div class="node"><span class="tag">VERIFY</span><b>Evidence receipt</b></div></div>
+        <div class="cardgrid">
+          <div class="card"><div class="metric"><div><small>TDH</small><strong id="tdh">—</strong></div><div><small>Velocity</small><strong id="vel">—</strong></div><div><small>Motor</small><strong id="motor">—</strong></div></div><div class="chart" id="pumpChart"><svg viewBox="0 0 500 170"><path class="trace" d="M20 145 C120 110 200 65 310 50 S430 75 480 95"/><circle class="dot" cx="310" cy="50" r="6"/></svg></div><button class="action" id="runPump">RUN VERIFIED DESIGN</button></div>
+          <div class="card"><div class="console" id="pumpLog">Waiting for human-approved request…</div></div>
+        </div>
+      </div>
+      <div class="scene" id="solar">
+        <div class="hero"><div><div class="kicker">ENERGY SPECIALIST</div><div class="title">Solar Micro-Station</div><div class="sub">9.6 kWh/day • 5.8 PSH • 1.5 day autonomy</div></div><div class="status">RESOURCE-AWARE</div></div>
+        <div class="flow"><div class="node"><span class="tag">LOAD</span><b>Demand profile</b></div><div class="node"><span class="tag">SOLVER</span><b>PV + battery</b></div><div class="node"><span class="tag">CHECK</span><b>Energy balance</b></div><div class="node"><span class="tag">EVIDENCE</span><b>Verified package</b></div></div>
+        <div class="cardgrid"><div class="card"><div class="metric"><div><small>PV Array</small><strong id="pv">—</strong></div><div><small>Battery</small><strong id="bat">—</strong></div><div><small>Inverter</small><strong id="inv">—</strong></div></div><div class="chart" id="solarChart"><svg viewBox="0 0 500 170"><path class="trace" d="M20 130 C90 130 120 40 180 45 S250 135 320 110 S400 35 480 55"/><circle class="dot" cx="480" cy="55" r="6"/></svg></div><button class="action" id="runSolar">SIZE MICRO-STATION</button></div><div class="card"><div class="console" id="solarLog">Awaiting deterministic sizing…</div></div></div>
+      </div>
+      <div class="scene dramatic" id="rescue">
+        <div class="hero"><div><div class="kicker">TELECOM + POWER SPECIALISTS</div><div class="title">Remote Link Rescue</div><div class="sub">Relay battery falling • service window at risk</div></div><div class="status">INCIDENT MODE</div></div>
+        <div class="flow"><div class="node"><span class="tag">INCIDENT</span><b>4.0 h remaining</b></div><div class="node"><span class="tag">ROUTE</span><b>Power + telecom</b></div><div class="node"><span class="tag">OPTIMIZE</span><b>Critical load</b></div><div class="node"><span class="tag">APPROVE</span><b>Human review</b></div></div>
+        <div class="cardgrid"><div class="card"><div class="bigline">Keep the relay alive.<br>Keep the team connected.</div><div class="quote">“We need the link through the night — but don’t fake a PASS.”</div><button class="action" id="runRescue">RUN RESCUE PLAN</button><div class="humor" id="humor"></div></div><div class="card"><div class="console" id="rescueLog">Incident frozen. Evidence preserved.</div></div></div>
+      </div>
+      <div class="scene" id="pro">
+        <div class="hero"><div><div class="kicker">REVENUECAT TEST STORE</div><div class="title">WEXSPACE Pro</div><div class="sub">Entitlement-driven premium capability</div></div><div class="status">NO SIMULATED PURCHASE SUCCESS</div></div>
+        <div class="cardgrid" style="margin-top:30px"><div class="card"><div class="bigline">Free core workflow → verified purchase → entitlement <span style="color:#67e8f9">pro</span> → premium evidence capabilities.</div><button class="action" id="runPro">VERIFY COMMERCIAL PATH</button></div><div class="card"><div class="console" id="proLog">RevenueCat configuration loaded.</div></div></div>
+      </div>
+      <div class="overlay" id="intro"><div class="orb"><img src="wexspace-logo.png"></div><h1>CONTINUE • VERIFY • DELIVER</h1></div>
+    </section>
+    <aside class="panel evidence"><h3>Evidence Stream</h3><div class="receipt"><small>PROJECT</small><b>Durable mission state</b></div><div class="receipt"><small>AUTHORITY</small><b>Human-governed action boundary</b></div><div class="receipt"><small>RESULT</small><b>Configured ≠ Executed ≠ Verified</b></div><div class="receipt"><small>PROVENANCE</small><b>Tool • trace • artifact • receipt</b></div></aside>
+  </div>
+</div>
+<script>
+const q=s=>document.querySelector(s);
+function scene(id){document.querySelectorAll('.scene').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.mission').forEach(x=>x.classList.toggle('active',x.dataset.scene===id));q('#'+id).classList.add('active')}
+document.querySelectorAll('.mission').forEach(m=>m.onclick=()=>scene(m.dataset.scene));
+q('#runPump').onclick=()=>{let Q=18/3600,D=.065,A=Math.PI*D*D/4,v=Q/A,Re=1000*v*D/.001,f=.3164/Math.pow(Re,.25),hf=f*(85/D)*(v*v/(2*9.81)),hm=6*(v*v/(2*9.81)),tdh=24+hf+hm,p=1000*9.81*Q*tdh/.68/1000;q('#tdh').textContent=tdh.toFixed(1)+' m';q('#vel').textContent=v.toFixed(2)+' m/s';q('#motor').textContent=(p<4?'4.0':'5.5')+' kW';q('#pumpChart').classList.add('verified');q('#pumpLog').innerHTML='<span class="ok">✓ request normalized</span><br>Re='+Math.round(Re).toLocaleString()+' → turbulent<br>f='+f.toFixed(4)+'<br>losses='+(hf+hm).toFixed(2)+' m<br><span class="warn">adversarial check: motor margin?</span><br><span class="ok">✓ corrected / 4.0 kW selected<br>✓ EVIDENCE RECEIPT PUMP-001</span>'}
+q('#runSolar').onclick=()=>{let pv=9.6/(5.8*.78),bat=9.6*1.5/(.8*.9);q('#pv').textContent=pv.toFixed(1)+' kWp';q('#bat').textContent=bat.toFixed(1)+' kWh';q('#inv').textContent='3.0 kW';q('#solarChart').classList.add('verified');q('#solarLog').innerHTML='<span class="ok">✓ load profile accepted</span><br>PV derate=0.78<br>autonomy=1.5 days<br>DOD=80%<br><span class="ok">✓ energy balance PASS<br>✓ EVIDENCE RECEIPT SOLAR-001</span>'}
+q('#runRescue').onclick=()=>{q('#rescueLog').innerHTML='<span class="warn">battery SOC 40% → critical</span><br>critical load=120 W<br>reserve floor=20%<br>PV recovery=600 W<br>noncritical loads isolated<br><span class="ok">✓ overnight service window restored<br>✓ HUMAN APPROVAL RECEIVED<br>✓ EVIDENCE RECEIPT LINK-001</span>';q('#humor').textContent='Signal restored. Coffee subsystem still pending.'}
+q('#runPro').onclick=()=>{q('#proLog').innerHTML='product: wexspace_pro_monthly<br>entitlement: pro<br>offering: configured<br><span class="ok">✓ public SDK key secured in CI</span><br><span class="warn">runtime purchase success only after real Test Store transaction</span>'}
+window.WEX={scene};
+</script>
+</body></html>
