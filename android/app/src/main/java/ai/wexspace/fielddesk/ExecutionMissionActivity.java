@@ -88,8 +88,7 @@ public abstract class ExecutionMissionActivity extends Activity {
             next.setText(verificationPass()?"ISSUE EVIDENCE RECEIPT":"RETURN TO HUMAN REVIEW");
             if(!verificationPass()) next.setEnabled(false);
         } else {
-            addReceipt("EVIDENCE RECEIPT",evidenceId()+"
-Hash-bound result package · provenance complete",WexspaceBrand.GREEN);
+            addReceipt("EVIDENCE RECEIPT",evidenceId()+"\nHash-bound result package · provenance complete",WexspaceBrand.GREEN);
             gate.setText("STATE · VERIFIED + EVIDENCE-LINKED");
             next.setText("PROJECT COMPLETE");
             next.setEnabled(false);
@@ -116,9 +115,27 @@ Hash-bound result package · provenance complete",WexspaceBrand.GREEN);
         WexspaceBrand.elevate(l,3);
         return l;
     }
-    private TextView tag(String s){TextView v=text(s,10,true,WexspaceBrand.CYAN);return v;}
-    private Button button(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextColor(WexspaceBrand.TEXT);b.setBackground(WexspaceBrand.pill(Color.rgb(34,211,238),Color.rgb(7,37,61),12,getResources().getDisplayMetrics().density));return b;}
-    private TextView text(String s,int sp,boolean bold,int color){TextView v=new TextView(this);v.setText(s);v.setTextSize(sp);v.setTextColor(color);if(bold)v.setTypeface(null,android.graphics.Typeface.BOLD);return v;}
-    private LinearLayout.LayoutParams margin(int bottom){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);p.setMargins(0,0,0,bottom);return p;}
+    private TextView tag(String s){return text(s,10,true,WexspaceBrand.CYAN);}
+    private Button button(String s){
+        Button b=new Button(this);
+        b.setText(s);
+        b.setAllCaps(false);
+        b.setTextColor(WexspaceBrand.TEXT);
+        b.setBackground(WexspaceBrand.pill(Color.rgb(34,211,238),Color.rgb(7,37,61),12,getResources().getDisplayMetrics().density));
+        return b;
+    }
+    private TextView text(String s,int sp,boolean bold,int color){
+        TextView v=new TextView(this);
+        v.setText(s);
+        v.setTextSize(sp);
+        v.setTextColor(color);
+        if(bold)v.setTypeface(null,android.graphics.Typeface.BOLD);
+        return v;
+    }
+    private LinearLayout.LayoutParams margin(int bottom){
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+        p.setMargins(0,0,0,bottom);
+        return p;
+    }
     protected int dp(int v){return Math.round(v*getResources().getDisplayMetrics().density);}
 }
