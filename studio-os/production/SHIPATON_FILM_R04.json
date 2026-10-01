@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "production_id": "WEXSPACE-SHIPATON-R04",
+  "title": "WEXSPACE AI — Three Missions, One Execution Fabric",
+  "target_duration_seconds": 115,
+  "max_duration_seconds": 119,
+  "master": {"width":1920,"height":1080,"fps":60,"video_codec":"h264","audio_codec":"aac"},
+  "rules": {
+    "slide_deck_forbidden": true,
+    "simulated_success_forbidden": true,
+    "real_runtime_required": true,
+    "visible_interaction_required": true,
+    "evidence_required": true
+  },
+  "projects": [
+    {
+      "id":"PUMP-SKID-001",
+      "name":"Compact Pump Skid",
+      "domain":"Mechanical Engineering",
+      "capture_window":[5,31],
+      "required_steps":["REQUEST","SPECIALIST","TOOL","VERIFY","EVIDENCE"]
+    },
+    {
+      "id":"SOLAR-MICRO-001",
+      "name":"Mini Solar Power Station",
+      "domain":"Energy Engineering",
+      "capture_window":[31,57],
+      "required_steps":["REQUEST","SPECIALIST","TOOL","VERIFY","EVIDENCE"]
+    },
+    {
+      "id":"LINK-RESCUE-001",
+      "name":"Remote Link Rescue",
+      "domain":"Telecom + Power",
+      "capture_window":[57,84],
+      "required_steps":["REQUEST","SPECIALIST","TOOL","VERIFY","EVIDENCE"]
+    }
+  ],
+  "beats": [
+    {"start":0,"end":5,"truth":"LIVE_RUNTIME","purpose":"Cold open directly on WEXSPACE Android command center"},
+    {"start":5,"end":31,"truth":"LIVE_RUNTIME","purpose":"Complete pump-skid execution"},
+    {"start":31,"end":57,"truth":"LIVE_RUNTIME","purpose":"Complete solar micro-station execution"},
+    {"start":57,"end":84,"truth":"LIVE_RUNTIME","purpose":"Complete remote-link rescue execution"},
+    {"start":84,"end":101,"truth":"LIVE_RUNTIME","purpose":"Return to command center, show shared execution fabric and WEXSPACE Pro entry point"},
+    {"start":101,"end":115,"truth":"JUDGE_OVERLAY","purpose":"Minimal closing identifiers over continuing runtime footage"}
+  ]
+}
