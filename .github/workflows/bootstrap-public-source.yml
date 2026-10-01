@@ -60,5 +60,9 @@ jobs:
           git add README.md LICENSE android site docs submission
           if ! git diff --cached --quiet; then
             git commit -m "bootstrap: publish judge-facing WEXSPACE Shipaton source [skip ci]"
-            git push
+            for i in 1 2 3; do
+              git pull --rebase origin main || { git rebase --abort || true; sleep 2; continue; }
+              git push && break
+              sleep 2
+            done
           fi
