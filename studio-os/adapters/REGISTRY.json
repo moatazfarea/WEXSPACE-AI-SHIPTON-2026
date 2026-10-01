@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "adapters": [
+    {"id":"android-emulator","family":"runtime","role":"real Android application surface","state":"INTEGRATED"},
+    {"id":"adb","family":"runtime-control","role":"touch, scroll, launch, screen recording","state":"INTEGRATED"},
+    {"id":"ffmpeg","family":"media","role":"60fps master, cinematic composite, audio mix","state":"INTEGRATED"},
+    {"id":"ffprobe","family":"qa","role":"duration/fps/resolution/audio inspection","state":"INTEGRATED"},
+    {"id":"github-actions","family":"worker","role":"reproducible cloud production worker","state":"INTEGRATED"},
+    {"id":"revenuecat-android","family":"monetization","role":"real entitlement path","state":"INTEGRATED"},
+    {"id":"voiceover","family":"audio","role":"narration asset","state":"INTEGRATED"},
+    {"id":"playwright","family":"browser-capture","role":"web runtime capture and control","state":"READY"},
+    {"id":"remotion","family":"motion","role":"future programmable composition adapter","state":"ROADMAP"},
+    {"id":"threejs","family":"3d-motion","role":"future spatial graphics adapter","state":"ROADMAP"},
+    {"id":"blender","family":"3d-vfx","role":"future advanced 3D/VFX worker","state":"ROADMAP"}
+  ]
+}
