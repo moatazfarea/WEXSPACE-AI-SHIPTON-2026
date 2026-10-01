@@ -88,7 +88,8 @@ public abstract class ExecutionMissionActivity extends Activity {
             next.setText(verificationPass()?"ISSUE EVIDENCE RECEIPT":"RETURN TO HUMAN REVIEW");
             if(!verificationPass()) next.setEnabled(false);
         } else {
-            addReceipt("EVIDENCE RECEIPT",evidenceId()+"\nHash-bound result package · provenance complete",WexspaceBrand.GREEN);
+            addReceipt("EVIDENCE RECEIPT",evidenceId()+"
+Hash-bound result package · provenance complete",WexspaceBrand.GREEN);
             gate.setText("STATE · VERIFIED + EVIDENCE-LINKED");
             next.setText("PROJECT COMPLETE");
             next.setEnabled(false);
@@ -101,7 +102,10 @@ public abstract class ExecutionMissionActivity extends Activity {
         TextView b=text(body,14,false,WexspaceBrand.TEXT);
         b.setPadding(0,dp(7),0,0);
         c.addView(b);
-        c.setAlpha(0f);\n        c.setTranslationY(dp(24));\n        trace.addView(c,margin(dp(10)));\n        c.animate().alpha(1f).translationY(0f).setDuration(460).start();
+        c.setAlpha(0f);
+        c.setTranslationY(dp(24));
+        trace.addView(c,margin(dp(10)));
+        c.animate().alpha(1f).translationY(0f).setDuration(460).start();
     }
 
     private LinearLayout card(){
