@@ -1,0 +1,115 @@
+name: WEXSPACE Studio OS — Final Runtime R07
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/shipaton-final-runtime-r07.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wexspace-shipaton-final-r07
+  cancel-in-progress: true
+
+jobs:
+  produce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Prepare Studio OS worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg xvfb fonts-dejavu-core python3 espeak-ng
+          cp site/assets/wexspace-logo.png cinema/wexspace-logo.png
+          npm init -y >/dev/null 2>&1
+          npm i playwright@1.55.0 >/dev/null 2>&1
+          npx playwright install chromium >/dev/null 2>&1
+          mkdir -p submission studio-os/build
+
+      - name: Capture real interactive WEXSPACE runtime at 60fps
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8080 --directory . >/tmp/http.log 2>&1 &
+          Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset >/tmp/xvfb.log 2>&1 &
+          sleep 2
+          export DISPLAY=:99
+          ffmpeg -y -f x11grab -framerate 60 -video_size 1280x720 -i :99             -c:v libx264 -preset ultrafast -crf 16 -pix_fmt yuv420p             studio-os/build/runtime-r07.mp4 >/tmp/capture.log 2>&1 &
+          FFPID=$!
+          node cinema/capture_shipaton_r07.mjs
+          sleep 1
+          kill -INT $FFPID || true
+          wait $FFPID || true
+          test -s studio-os/build/runtime-r07.mp4
+
+      - name: Generate local rights-safe narration
+        shell: bash
+        run: |
+          set -euo pipefail
+          espeak-ng -v en-us+m3 -s 175 -p 42 -a 155             -f studio-os/audio/SHIPATON_R07_NARRATION.txt             -w studio-os/build/narration-r07.wav
+          test -s studio-os/build/narration-r07.wav
+
+      - name: Master cinematic 60fps film
+        shell: bash
+        run: |
+          set -euo pipefail
+          DUR=$(ffprobe -v error -show_entries format=duration -of default=nk=1:nw=1 studio-os/build/runtime-r07.mp4)
+          ffmpeg -hide_banner -loglevel warning -y             -i studio-os/build/runtime-r07.mp4             -i studio-os/build/narration-r07.wav             -f lavfi -i "sine=frequency=56:sample_rate=48000:duration=$DUR"             -f lavfi -i "anoisesrc=color=pink:sample_rate=48000:duration=$DUR:amplitude=0.006"             -filter_complex "[0:v]scale=1920:1080:flags=lanczos,eq=contrast=1.05:saturation=1.08[v0];[v0]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='WEXSPACE AI / REAL EXECUTION':fontcolor=white@0.92:fontsize=27:x=52:y=42:box=1:boxcolor=0x02050dcc:boxborderw=14,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='PUMP SKID / MECHANICAL':fontcolor=0x88efff:fontsize=30:x=54:y=980:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='between(t,5,28)',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='SOLAR MICRO-STATION / ENERGY':fontcolor=0x88efff:fontsize=30:x=54:y=980:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='between(t,28,50)',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='REMOTE LINK RESCUE / TELECOM + POWER':fontcolor=0x88efff:fontsize=30:x=54:y=980:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='between(t,50,74)',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='REVENUECAT SHIPATON 2026 / NEXT GEN':fontcolor=0x7dffb2:fontsize=29:x=54:y=980:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='gte(t,74)'[v];[1:a]highpass=f=85,lowpass=f=8500,acompressor=threshold=-18dB:ratio=2.5:attack=15:release=160,volume=1.20[vo];[2:a]volume=0.013[drone];[3:a]lowpass=f=1200,volume=0.07[air];[vo][drone][air]amix=inputs=3:duration=longest:normalize=0[a]"             -map "[v]" -map "[a]" -t "$DUR"             -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -r 60             -c:a aac -b:a 192k -movflags +faststart             submission/WEXSPACE_SHIPATON_R07_FINAL_60FPS.mp4
+
+      - name: QA + evidence + persist
+        shell: bash
+        run: |
+          set -euo pipefail
+          ffprobe -v error             -show_entries stream=codec_type,codec_name,width,height,avg_frame_rate             -show_entries format=duration,size             -of json submission/WEXSPACE_SHIPATON_R07_FINAL_60FPS.mp4             > submission/WEXSPACE_SHIPATON_R07_FINAL_60FPS.meta.json
+          python3 - <<'PY'
+          import json
+          p=json.load(open("submission/WEXSPACE_SHIPATON_R07_FINAL_60FPS.meta.json"))
+          d=float(p["format"]["duration"])
+          v=next(x for x in p["streams"] if x["codec_type"]=="video")
+          a=next((x for x in p["streams"] if x["codec_type"]=="audio"),None)
+          assert 80 < d < 120, d
+          assert v["width"]==1920 and v["height"]==1080
+          assert v["avg_frame_rate"]=="60/1"
+          assert a is not None
+          print("FINAL_QA_PASS", d)
+          PY
+          sha256sum submission/WEXSPACE_SHIPATON_R07_FINAL_60FPS.mp4 > submission/WEXSPACE_SHIPATON_R07_FINAL_60FPS.sha256
+          cat > submission/WEXSPACE_SHIPATON_R07_RECEIPT.json <<'EOF'
+          {
+            "schema": 1,
+            "production_id": "WEXSPACE-SHIPATON-R07",
+            "repository": "moatazfarea/WEXSPACE-AI-SHIPTON-2026",
+            "source_truth": "REAL_INTERACTIVE_WEXSPACE_RUNTIME",
+            "slide_deck": false,
+            "visible_interaction": true,
+            "projects": ["PUMP-SKID-001","SOLAR-MICRO-001","LINK-RESCUE-001"],
+            "master": "submission/WEXSPACE_SHIPATON_R07_FINAL_60FPS.mp4",
+            "fps": 60
+          }
+          EOF
+          git config user.name "WEXSPACE Studio OS"
+          git config user.email "actions@users.noreply.github.com"
+          git add submission/WEXSPACE_SHIPATON_R07_*
+          git commit -m "studio-os: persist final Shipaton R07 runtime film [skip ci]"
+          git pull --rebase origin main
+          git push origin main
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WEXSPACE-SHIPATON-R07-FINAL
+          path: submission/WEXSPACE_SHIPATON_R07_*
+          retention-days: 30
+          compression-level: 0
