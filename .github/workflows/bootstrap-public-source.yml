@@ -1,0 +1,64 @@
+name: Bootstrap WEXSPACE Shipaton public source
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/bootstrap-public-source.yml
+permissions:
+  contents: write
+jobs:
+  bootstrap:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Import qualified Shipaton source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch shipaton-nextgen-20260930-r01 https://github.com/moatazfarea/wexspace-iew-agentic-fleet.git /tmp/src
+          mkdir -p android site docs submission
+          rsync -a /tmp/src/mobile/shipaton2026/ android/
+          rsync -a /tmp/src/site/ site/
+          rsync -a /tmp/src/docs/ docs/
+          cp /tmp/src/LICENSE LICENSE
+          cp /tmp/src/submission/WEXSPACE_APP_ICON_1024.png submission/
+          cp /tmp/src/submission/WEXSPACE_SCREENSHOT_1179x2556.png submission/
+          cat > README.md <<'EOF'
+          # WEXSPACE AI — Shipaton 2026
+          
+          WEXSPACE AI is a human-governed AI execution workspace for durable, resumable, evidence-linked work across specialist projects.
+          
+          This public repository is the judge-facing Shipaton 2026 / Next Gen export. The commercial WEXSPACE product remains in a separate private canonical repository.
+          
+          ## What is included
+          - Android application source
+          - RevenueCat Test Store / Galaxy integration path
+          - Deterministic engineering and governance components
+          - Public website source
+          - Submission icon and screenshot
+          - Security and third-party dependency notices
+          
+          ## Android build
+          ```bash
+          cd android
+          ./gradlew test assembleDebug
+          ```
+          
+          ## RevenueCat
+          The app implements RevenueCat SDK 10.15.1 paths for offering fetch, purchase, CustomerInfo refresh, restore purchases, and the `pro` entitlement. Runtime purchase success is claimed only when verified against the Test Store.
+          
+          ## Submission
+          RevenueCat Shipaton 2026 — Next Gen.
+          
+          ## License
+          MIT. Third-party components remain governed by their respective licenses/notices.
+          EOF
+          git config user.name "WEXSPACE CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add README.md LICENSE android site docs submission
+          if ! git diff --cached --quiet; then
+            git commit -m "bootstrap: publish judge-facing WEXSPACE Shipaton source [skip ci]"
+            git push
+          fi
