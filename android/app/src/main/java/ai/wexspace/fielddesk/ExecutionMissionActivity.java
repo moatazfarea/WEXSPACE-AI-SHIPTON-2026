@@ -101,7 +101,7 @@ public abstract class ExecutionMissionActivity extends Activity {
         TextView b=text(body,14,false,WexspaceBrand.TEXT);
         b.setPadding(0,dp(7),0,0);
         c.addView(b);
-        trace.addView(c,margin(dp(10)));
+        c.setAlpha(0f);\n        c.setTranslationY(dp(24));\n        trace.addView(c,margin(dp(10)));\n        c.animate().alpha(1f).translationY(0f).setDuration(460).start();
     }
 
     private LinearLayout card(){
