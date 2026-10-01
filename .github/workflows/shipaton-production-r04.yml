@@ -1,0 +1,130 @@
+name: WEXSPACE Studio OS — Shipaton R04
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - "studio-os/**"
+      - ".github/workflows/shipaton-production-r04.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wexspace-shipaton-r04
+  cancel-in-progress: true
+
+jobs:
+  produce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.6.0"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install Studio OS media adapters
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
+          ffmpeg -version | head -1
+          ffprobe -version | head -1
+
+      - name: Qualify production manifest
+        shell: bash
+        run: node studio-os/orchestrator.mjs studio-os/production/SHIPATON_FILM_R04.json
+
+      - name: Unit-test three deterministic projects
+        working-directory: android
+        shell: bash
+        run: gradle :app:testSandboxDebugUnitTest --stacktrace
+
+      - name: Build Android runtime
+        working-directory: android
+        shell: bash
+        run: gradle :app:assembleSandboxDebug --stacktrace
+
+      - name: Capture real Android execution
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          target: default
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          disable-animations: false
+          script: |
+            set -euo pipefail
+            APK="$(find android/app/build/outputs/apk -type f -name '*sandbox*debug*.apk' | head -1)"
+            test -s "$APK"
+            adb install -r "$APK"
+            bash studio-os/capture/android_capture.sh studio-os/build/raw-android-runtime.mp4
+
+      - name: Acquire approved narration
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p studio-os/build
+          curl -fL --retry 3 "https://www.aidocmaker.com/g0/audio?name=7602b102ef6d4538aa57be2bac76c16d" -o studio-os/build/narration.mp3
+          test -s studio-os/build/narration.mp3
+          ffprobe -v error -show_entries format=duration -of default=nk=1:nw=1 studio-os/build/narration.mp3
+
+      - name: Master live-runtime cinematic film at 60fps
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p submission
+          ffmpeg -hide_banner -loglevel warning -y             -i studio-os/build/raw-android-runtime.mp4             -i studio-os/build/narration.mp3             -f lavfi -i "sine=frequency=55:sample_rate=48000:duration=115"             -f lavfi -i "anoisesrc=color=pink:sample_rate=48000:duration=115:amplitude=0.010"             -filter_complex "[0:v]setpts=PTS-STARTPTS,minterpolate=fps=60:mi_mode=blend,split=2[bg0][fg0];[bg0]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,gblur=sigma=30:steps=2,eq=brightness=-0.34:saturation=0.75[bg];[fg0]scale=-2:1040,eq=contrast=1.05:saturation=1.04[phone];[bg][phone]overlay=x='(W-w)/2+18*sin(t*0.30)':y='20+7*sin(t*0.18)':eval=frame[base];[base]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='WEXSPACE AI  /  LIVE ANDROID EXECUTION':fontcolor=white@0.90:fontsize=26:x=50:y=44:box=1:boxcolor=0x02050dcc:boxborderw=14,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='01  COMPACT PUMP SKID  ·  MECHANICAL ENGINEERING':fontcolor=0x8eefff:fontsize=30:x=60:y=940:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='between(t,5,31)',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='02  MINI SOLAR POWER STATION  ·  ENERGY ENGINEERING':fontcolor=0x8eefff:fontsize=30:x=60:y=940:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='between(t,31,57)',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='03  REMOTE LINK RESCUE  ·  TELECOM + POWER':fontcolor=0x8eefff:fontsize=30:x=60:y=940:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='between(t,57,84)',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='REVENUECAT SHIPATON 2026  ·  NEXT GEN  ·  PUBLIC SOURCE':fontcolor=0x7dffb2:fontsize=28:x=60:y=940:box=1:boxcolor=0x02050ddd:boxborderw=14:enable='between(t,101,115)',subtitles=studio-os/audio/SHIPATON_R04.srt:force_style='FontName=DejaVu Sans,FontSize=23,PrimaryColour=&H00FFFFFF,OutlineColour=&H00101010,BorderStyle=1,Outline=2,Shadow=0,MarginV=48'[v];[1:a]apad=pad_dur=120,atrim=0:115,volume=1.08[vo];[2:a]volume=0.014[drone];[3:a]lowpass=f=1250,volume=0.10[air];[vo][drone][air]amix=inputs=3:duration=longest:normalize=0[a]"             -map "[v]" -map "[a]" -t 115             -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -r 60             -c:a aac -b:a 192k -movflags +faststart             submission/WEXSPACE_SHIPATON_R04_60FPS.mp4
+
+      - name: Production QA and evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node studio-os/qa.mjs submission/WEXSPACE_SHIPATON_R04_60FPS.mp4
+          ffprobe -v error -show_entries stream=codec_type,codec_name,width,height,avg_frame_rate -show_entries format=duration,size -of json             submission/WEXSPACE_SHIPATON_R04_60FPS.mp4 > submission/WEXSPACE_SHIPATON_R04_60FPS.meta.json
+          sha256sum submission/WEXSPACE_SHIPATON_R04_60FPS.mp4 > submission/WEXSPACE_SHIPATON_R04_60FPS.sha256
+          cp studio-os/build/raw-android-runtime.mp4 submission/WEXSPACE_SHIPATON_R04_RAW_ANDROID.mp4
+          sha256sum submission/WEXSPACE_SHIPATON_R04_RAW_ANDROID.mp4 > submission/WEXSPACE_SHIPATON_R04_RAW_ANDROID.sha256
+
+      - name: Upload Studio OS production evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: WEXSPACE-SHIPATON-R04-PRODUCTION
+          path: |
+            submission/WEXSPACE_SHIPATON_R04_60FPS.mp4
+            submission/WEXSPACE_SHIPATON_R04_60FPS.meta.json
+            submission/WEXSPACE_SHIPATON_R04_60FPS.sha256
+            submission/WEXSPACE_SHIPATON_R04_RAW_ANDROID.mp4
+            submission/WEXSPACE_SHIPATON_R04_RAW_ANDROID.sha256
+            studio-os/evidence/*.json
+          retention-days: 30
+          compression-level: 0
+
+      - name: Persist verified master
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "WEXSPACE Studio OS"
+          git config user.email "actions@users.noreply.github.com"
+          git add submission/WEXSPACE_SHIPATON_R04_* studio-os/evidence/*.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "studio-os: promote verified Shipaton R04 live-runtime master [skip ci]"
+          git pull --rebase origin main
+          git push origin main
