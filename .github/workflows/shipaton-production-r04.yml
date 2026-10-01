@@ -71,7 +71,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: false
           script: |
-            set -euo pipefail
+            set -eu
             APK="$(find android/app/build/outputs/apk -type f -name '*sandbox*debug*.apk' | head -1)"
             test -s "$APK"
             adb install -r "$APK"
